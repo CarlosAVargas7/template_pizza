@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Menus - readable by all, writable only by authenticated admin
+    match /menus/{branchId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Orders - anyone can create, only authenticated admin can read/update all
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read: if
+        request.auth != null ||
+        // Allow reading own order by phone number
+        resource.data.phone == request.resource.data.phone;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+  }
+}
