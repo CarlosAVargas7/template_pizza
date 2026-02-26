@@ -63,16 +63,55 @@ function TrackingContent() {
     setLoading(true);
     setSearched(true);
     try {
-      const q = query(
+      // Limpiar el número de teléfono: remover espacios, guiones, paréntesis
+      const cleanPhone = phone.trim().replace(/\s+/g, '').replace(/[-()]/g, '');
+
+      console.log("🔍 Buscando con teléfono original:", phone);
+      console.log("🔍 Buscando con teléfono limpio:", cleanPhone);
+
+      // Primero intentar con el número exacto como lo guardó el usuario
+      let q = query(
         collection(db, "orders"),
         where("phone", "==", phone.trim()),
         orderBy("createdAt", "desc")
       );
-      const snap = await getDocs(q);
-      setOrders(
-        snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Order))
-      );
-    } catch {
+
+      let snap = await getDocs(q);
+
+      // Si no encuentra, intentar con el número limpio
+      if (snap.empty && cleanPhone !== phone.trim()) {
+        console.log("🔄 Reintentando con teléfono limpio...");
+        q = query(
+          collection(db, "orders"),
+          where("phone", "==", cleanPhone),
+          orderBy("createdAt", "desc")
+        );
+        snap = await getDocs(q);
+      }
+
+      // Si todavía no encuentra, buscar todos y filtrar por similitud
+      if (snap.empty) {
+        console.log("🔄 Buscando todos los pedidos para filtrar manualmente...");
+        const allQuery = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+        const allSnap = await getDocs(allQuery);
+
+        const filteredOrders = allSnap.docs.filter(doc => {
+          const docPhone = doc.data().phone?.replace(/\s+/g, '').replace(/[-()]/g, '') || '';
+          return docPhone.includes(cleanPhone) || cleanPhone.includes(docPhone);
+        });
+
+        console.log(`📊 Encontrados ${filteredOrders.length} pedidos por similitud`);
+        setOrders(
+          filteredOrders.map(doc => ({ id: doc.id, ...doc.data() } as Order))
+        );
+      } else {
+        console.log(`📊 Encontrados ${snap.size} pedidos exactos`);
+        setOrders(
+          snap.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Order))
+        );
+      }
+    } catch (error) {
+      console.error("❌ Error en búsqueda:", error);
       // If Firebase not configured, show demo
       setOrders([]);
     } finally {
@@ -223,13 +262,12 @@ function TrackingContent() {
                       return (
                         <div key={i} className="flex flex-col items-center gap-2 z-10">
                           <div
-                            className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
-                              done
+                            className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${done
                                 ? "bg-green-500 border-green-500 text-white"
                                 : active
-                                ? `border-current text-current ${s.color}`
-                                : "bg-white border-gray-200 text-gray-300"
-                            }`}
+                                  ? `border-current text-current ${s.color}`
+                                  : "bg-white border-gray-200 text-gray-300"
+                              }`}
                           >
                             {done ? (
                               <Check className="w-5 h-5" />
@@ -238,9 +276,8 @@ function TrackingContent() {
                             )}
                           </div>
                           <p
-                            className={`text-xs font-semibold text-center max-w-16 ${
-                              done ? "text-green-600" : active ? "text-gray-900" : "text-gray-400"
-                            }`}
+                            className={`text-xs font-semibold text-center max-w-16 ${done ? "text-green-600" : active ? "text-gray-900" : "text-gray-400"
+                              }`}
                           >
                             {s.label}
                           </p>
