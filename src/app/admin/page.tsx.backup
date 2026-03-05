@@ -1,0 +1,548 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { motion } from "framer-motion";
+import {
+  Lock,
+  LogOut,
+  Package,
+  Settings,
+  Phone,
+  MapPin,
+  Clock,
+  MessageCircle,
+  RefreshCw,
+  Store,
+  ChevronDown,
+} from "lucide-react";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  doc,
+  updateDoc,
+  setDoc,
+  getDoc,
+  Timestamp,
+} from "firebase/firestore";
+import {
+  defaultDynamicMenuNorte,
+  defaultDynamicMenuSur,
+  BranchMenu,
+  formatCOP,
+} from "@/lib/menuDataV2";
+import { OrderStatus } from "@/lib/store";
+import { toast } from "sonner";
+import MenuManager from "@/components/admin/MenuManager";
+
+const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "admin123";
+
+const STATUS_LABELS: Record<OrderStatus, { label: string; color: string; bg: string }> = {
+  pendiente: { label: "Pendiente", color: "text-gray-600", bg: "bg-gray-100" },
+  confirmado: { label: "Confirmado", color: "text-green-700", bg: "bg-green-100" },
+  preparacion: { label: "En Preparación", color: "text-orange-700", bg: "bg-orange-100" },
+  despachado: { label: "Despachado", color: "text-blue-700", bg: "bg-blue-100" },
+};
+const STATUSES: OrderStatus[] = ["pendiente", "confirmado", "preparacion", "despachado"];
+
+interface Order {
+  id: string;
+  branch: string;
+  customerName: string;
+  phone: string;
+  address: string;
+  status: OrderStatus;
+  total: number;
+  createdAt: Timestamp;
+  paymentMethod: string;
+  items?: any[]; // New dynamic order structure
+  // Legacy support
+  item?: {
+    size: string;
+    specialty: string;
+    drink: string;
+    quantity: number;
+    notes?: string;
+    condiments?: string[];
+  };
+}
+
+export default function AdminPageV2() {
+  const [authed, setAuthed] = useState(false);
+  const [password, setPassword] = useState("");
+  const [tab, setTab] = useState<"orders" | "menu">("orders");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [filteredBranch, setFilteredBranch] = useState<"all" | "norte" | "sur">("all");
+  const [filteredStatus, setFilteredStatus] = useState<"all" | OrderStatus>("all");
+  const [menuNorte, setMenuNorte] = useState<BranchMenu>(defaultDynamicMenuNorte);
+  const [menuSur, setMenuSur] = useState<BranchMenu>(defaultDynamicMenuSur);
+  const [menuBranch, setMenuBranch] = useState<"norte" | "sur">("norte");
+  const [editingMenu, setEditingMenu] = useState(false);
+  const [savingMenu, setSavingMenu] = useState(false);
+
+  // Load orders from Firebase
+  useEffect(() => {
+    if (!authed) return;
+    const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, (snap) => {
+      setOrders(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Order)));
+    });
+    return () => unsub();
+  }, [authed]);
+
+  // Load menus from Firebase
+  const loadMenus = useCallback(async () => {
+    try {
+      const nSnap = await getDoc(doc(db, "menus", "norte"));
+      if (nSnap.exists()) {
+        const menuData = nSnap.data() as BranchMenu;
+        // Check if it's the new format or legacy format
+        if (menuData.categories) {
+          setMenuNorte(menuData);
+        } else {
+          // Migrate legacy format
+          setMenuNorte(defaultDynamicMenuNorte);
+        }
+      } else {
+        setMenuNorte(defaultDynamicMenuNorte);
+      }
+
+      const sSnap = await getDoc(doc(db, "menus", "sur"));
+      if (sSnap.exists()) {
+        const menuData = sSnap.data() as BranchMenu;
+        if (menuData.categories) {
+          setMenuSur(menuData);
+        } else {
+          // Migrate legacy format
+          setMenuSur(defaultDynamicMenuSur);
+        }
+      } else {
+        setMenuSur(defaultDynamicMenuSur);
+      }
+    } catch (error) {
+      console.error("Error loading menus:", error);
+      // Use defaults
+      setMenuNorte(defaultDynamicMenuNorte);
+      setMenuSur(defaultDynamicMenuSur);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (authed) loadMenus();
+  }, [authed, loadMenus]);
+
+  const handleLogin = () => {
+    if (password === ADMIN_PASSWORD) {
+      setAuthed(true);
+    } else {
+      toast.error("Contraseña incorrecta");
+    }
+  };
+
+  const updateStatus = async (orderId: string, status: OrderStatus) => {
+    try {
+      await updateDoc(doc(db, "orders", orderId), { status });
+      toast.success(`Estado actualizado: ${STATUS_LABELS[status].label}`);
+    } catch {
+      toast.error("Error al actualizar estado");
+    }
+  };
+
+  const saveMenu = async (updatedMenu: BranchMenu) => {
+    setSavingMenu(true);
+    try {
+      await setDoc(doc(db, "menus", menuBranch), updatedMenu);
+      if (menuBranch === "norte") {
+        setMenuNorte(updatedMenu);
+      } else {
+        setMenuSur(updatedMenu);
+      }
+      toast.success(`Menú ${menuBranch === "norte" ? "Norte" : "Sur"} guardado`);
+      setEditingMenu(false);
+    } catch (error) {
+      console.error("Error saving menu:", error);
+      toast.error("Error al guardar menú. Verifica la conexión a Firebase.");
+    } finally {
+      setSavingMenu(false);
+    }
+  };
+
+  const filteredOrders = orders.filter((o) => {
+    if (filteredBranch !== "all" && o.branch !== filteredBranch) return false;
+    if (filteredStatus !== "all" && o.status !== filteredStatus) return false;
+    return true;
+  });
+
+  const currentMenu = menuBranch === "norte" ? menuNorte : menuSur;
+
+  const whatsappLink = (order: Order) => {
+    const branch = order.branch === "norte" ? "+573145550101" : "+573145550202";
+    const msg = encodeURIComponent(
+      `Hola ${order.customerName}, tu pedido #${order.id.substring(0, 6).toUpperCase()} está ${STATUS_LABELS[order.status].label.toLowerCase()}. Total: ${formatCOP(order.total)}.`
+    );
+    return `https://wa.me/${branch.replace("+", "")}?text=${msg}`;
+  };
+
+  if (!authed) {
+    return (
+      <div className="min-h-screen hero-bg flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-3xl p-8 w-full max-w-sm shadow-2xl"
+        >
+          <div className="text-center mb-8">
+            <div className="w-16 h-16 pizza-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <Lock className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-2xl font-black text-gray-900">Panel Admin</h1>
+            <p className="text-gray-500 text-sm mt-1">Pizza Antioquia</p>
+          </div>
+          <div className="space-y-4">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+              placeholder="Contraseña"
+              className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <button
+              onClick={handleLogin}
+              className="w-full py-3 pizza-gradient text-white font-bold rounded-2xl hover:opacity-90 transition-opacity"
+            >
+              Ingresar
+            </button>
+          </div>
+          <p className="text-center text-xs text-gray-400 mt-6">
+            Contraseña por defecto: admin123
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Top bar */}
+      <div className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl pizza-gradient flex items-center justify-center">
+              <span className="text-white text-sm font-black">PA</span>
+            </div>
+            <h1 className="font-black text-gray-900">Admin Dashboard v2</h1>
+          </div>
+          <button
+            onClick={() => setAuthed(false)}
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-700 text-sm transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+            Salir
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-1 pb-0">
+          {(["orders", "menu"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${tab === t
+                  ? "border-primary text-primary"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+            >
+              {t === "orders" ? <Package className="w-4 h-4" /> : <Settings className="w-4 h-4" />}
+              {t === "orders" ? `Pedidos (${orders.length})` : "Gestión de Menú"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {/* ============ ORDERS TAB ============ */}
+        {tab === "orders" && (
+          <div>
+            {/* Stats */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+              {STATUSES.map((s) => {
+                const count = orders.filter((o) => o.status === s).length;
+                const sc = STATUS_LABELS[s];
+                return (
+                  <div key={s} className={`p-4 rounded-2xl ${sc.bg}`}>
+                    <p className={`text-2xl font-black ${sc.color}`}>{count}</p>
+                    <p className={`text-xs font-medium ${sc.color}`}>{sc.label}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-wrap gap-3 mb-6">
+              <div className="flex items-center gap-2">
+                <Store className="w-4 h-4 text-gray-400" />
+                <select
+                  value={filteredBranch}
+                  onChange={(e) => setFilteredBranch(e.target.value as typeof filteredBranch)}
+                  className="text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+                >
+                  <option value="all">Todas las sucursales</option>
+                  <option value="norte">Norte</option>
+                  <option value="sur">Sur</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Package className="w-4 h-4 text-gray-400" />
+                <select
+                  value={filteredStatus}
+                  onChange={(e) => setFilteredStatus(e.target.value as typeof filteredStatus)}
+                  className="text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/30 bg-white"
+                >
+                  <option value="all">Todos los estados</option>
+                  {STATUSES.map((s) => (
+                    <option key={s} value={s}>{STATUS_LABELS[s].label}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={() => {
+                  setFilteredBranch("all");
+                  setFilteredStatus("all");
+                }}
+                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-3 py-2 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 transition-colors"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Limpiar filtros
+              </button>
+            </div>
+
+            {/* Orders List */}
+            <div className="space-y-4">
+              {filteredOrders.length === 0 && (
+                <div className="text-center py-16 text-gray-400">
+                  <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>No hay pedidos</p>
+                </div>
+              )}
+              {filteredOrders.map((order) => {
+                const sc = STATUS_LABELS[order.status];
+                const createdDate = order.createdAt?.toDate?.();
+                return (
+                  <motion.div
+                    key={order.id}
+                    layout
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                  >
+                    <div className="p-4 sm:p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono text-xs text-gray-400">#{order.id.substring(0, 8).toUpperCase()}</span>
+                            <span className="text-xs font-medium text-gray-500 capitalize bg-gray-100 px-2 py-0.5 rounded-full">
+                              {order.branch === "norte" ? "Norte" : "Sur"}
+                            </span>
+                          </div>
+                          <h3 className="font-black text-gray-900">{order.customerName}</h3>
+                          <div className="flex flex-wrap items-center gap-3 mt-1">
+                            <a href={`tel:${order.phone}`} className="flex items-center gap-1 text-sm text-gray-500 hover:text-primary">
+                              <Phone className="w-3.5 h-3.5" />
+                              {order.phone}
+                            </a>
+                            <span className="flex items-center gap-1 text-sm text-gray-500">
+                              <MapPin className="w-3.5 h-3.5" />
+                              {order.address}
+                            </span>
+                          </div>
+                          {createdDate && (
+                            <p className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                              <Clock className="w-3 h-3" />
+                              {createdDate.toLocaleString("es-CO")}
+                            </p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl font-black text-primary">{formatCOP(order.total)}</p>
+                          <span className={`inline-block text-xs font-bold px-2.5 py-0.5 rounded-full mt-1 ${sc.bg} ${sc.color}`}>
+                            {sc.label}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Order details - Support both legacy and new format */}
+                      <div className="bg-gray-50 rounded-xl p-3 mb-4 text-xs">
+                        {order.items ? (
+                          // New dynamic format
+                          <div className="space-y-1">
+                            {order.items.map((item, idx) => (
+                              <div key={idx} className="text-gray-700">
+                                <span className="font-medium">{item.quantity}x {item.productName}</span>
+                                {item.selectedOptions && (
+                                  <span className="text-gray-500 ml-1">
+                                    ({Object.values(item.selectedOptions || {}).flat().join(", ")})
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : order.item ? (
+                          // Legacy format
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div>
+                              <p className="text-gray-400">Especialidad</p>
+                              <p className="font-semibold text-gray-700 capitalize">{order.item?.specialty}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-400">Tamaño</p>
+                              <p className="font-semibold text-gray-700 capitalize">{order.item?.size}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-400">Bebida</p>
+                              <p className="font-semibold text-gray-700 capitalize">{order.item?.drink}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-400">Pago</p>
+                              <p className="font-semibold text-gray-700">
+                                {order.paymentMethod === "wompi" ? "Wompi" : "Efectivo"}
+                              </p>
+                            </div>
+                            {order.item?.notes && (
+                              <div className="col-span-2 sm:col-span-4">
+                                <p className="text-gray-400">Notas</p>
+                                <p className="font-medium text-gray-700 italic">{order.item.notes}</p>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-gray-500">No hay detalles del pedido</p>
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex flex-wrap gap-2">
+                        {/* Status selector */}
+                        <div className="relative">
+                          <select
+                            value={order.status}
+                            onChange={(e) => updateStatus(order.id, e.target.value as OrderStatus)}
+                            className={`appearance-none pr-7 pl-3 py-2 rounded-xl border text-xs font-semibold focus:outline-none cursor-pointer ${sc.bg} ${sc.color} border-transparent`}
+                          >
+                            {STATUSES.map((s) => (
+                              <option key={s} value={s}>{STATUS_LABELS[s].label}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none" />
+                        </div>
+
+                        {/* WhatsApp */}
+                        <a
+                          href={whatsappLink(order)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-3 py-2 bg-green-50 text-green-700 text-xs font-semibold rounded-xl hover:bg-green-100 transition-colors border border-green-200"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          WhatsApp
+                        </a>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ============ MENU TAB ============ */}
+        {tab === "menu" && (
+          <div>
+            {/* Branch selector */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex gap-2">
+                {(["norte", "sur"] as const).map((b) => (
+                  <button
+                    key={b}
+                    onClick={() => setMenuBranch(b)}
+                    className={`px-5 py-2.5 rounded-2xl text-sm font-bold transition-all ${menuBranch === b ? "pizza-gradient text-white shadow-md" : "bg-white text-gray-600 border border-gray-200"
+                      }`}
+                  >
+                    {b === "norte" ? "Sucursal Norte" : "Sucursal Sur"}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                {!editingMenu ? (
+                  <button
+                    onClick={() => setEditingMenu(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Editar Menú
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setEditingMenu(false);
+                      loadMenus();
+                    }}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl text-sm font-semibold hover:bg-gray-50 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Cancelar
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {editingMenu ? (
+              <MenuManager
+                menu={currentMenu}
+                onSave={saveMenu}
+                onCancel={() => setEditingMenu(false)}
+                saving={savingMenu}
+              />
+            ) : (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                <h3 className="font-black text-gray-900 mb-4">Vista Previa del Menú</h3>
+                <div className="space-y-6">
+                  {currentMenu.categories.map((category) => (
+                    <div key={category.id} className="border-b border-gray-100 pb-6 last:border-0">
+                      <h4 className="font-bold text-gray-900 mb-2">{category.name}</h4>
+                      <p className="text-sm text-gray-600 mb-4">{category.description}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {category.products.map((product) => (
+                          <div key={product.id} className="border border-gray-100 rounded-xl p-4">
+                            <div className="flex items-start justify-between mb-2">
+                              <h5 className="font-semibold text-gray-900">{product.name}</h5>
+                              <span className={`text-xs font-semibold px-2 py-1 rounded-full ${product.status === "available"
+                                  ? "bg-green-50 text-green-700"
+                                  : "bg-red-50 text-red-700"
+                                }`}>
+                                {product.status === "available" ? "Disponible" : "Agotado"}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{product.description}</p>
+                            <p className="font-black text-primary">{formatCOP(product.basePrice)}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              {product.popular && <span className="text-xs bg-yellow-50 text-yellow-700 px-2 py-1 rounded-full">Popular</span>}
+                              {product.spicy && <span className="text-xs bg-red-50 text-red-700 px-2 py-1 rounded-full">Picante</span>}
+                              {product.vegetarian && <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">Veggie</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

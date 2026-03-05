@@ -15,6 +15,8 @@ import {
   query,
   where,
   getDocs,
+  getDoc,
+  doc,
   orderBy,
   Timestamp,
 } from "firebase/firestore";
@@ -30,7 +32,17 @@ interface Order {
   status: OrderStatus;
   total: number;
   createdAt: Timestamp;
-  item: {
+  // New dynamic order structure
+  items?: {
+    productId: string;
+    productName: string;
+    quantity: number;
+    selectedOptions: Record<string, string[]>;
+    unitPrice: number;
+    totalPrice: number;
+  }[];
+  // Legacy support
+  item?: {
     size: string;
     specialty: string;
     drink: string;
@@ -50,6 +62,30 @@ const STATUS_CONFIG: Record<
   despachado: { label: "Despachado", labelEn: "Dispatched", color: "bg-blue-500", step: 3 },
 };
 
+// Helper function to get option names from IDs
+const getOptionNames = (selectedOptions: Record<string, string[]>, branchMenu?: any): string[] => {
+  if (!branchMenu || !selectedOptions) return [];
+
+  const optionNames: string[] = [];
+
+  branchMenu.categories?.forEach((category: any) => {
+    category.products?.forEach((product: any) => {
+      product.optionGroups?.forEach((group: any) => {
+        if (selectedOptions[group.id]) {
+          selectedOptions[group.id].forEach((optionId: string) => {
+            const option = group.options.find((opt: any) => opt.id === optionId);
+            if (option) {
+              optionNames.push(option.name);
+            }
+          });
+        }
+      });
+    });
+  });
+
+  return optionNames;
+};
+
 function TrackingContent() {
   const params = useSearchParams();
   const { tx, language } = useLanguage();
@@ -57,6 +93,29 @@ function TrackingContent() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [branchMenus, setBranchMenus] = useState<Record<string, any>>({});
+
+  // Load branch menus
+  useEffect(() => {
+    const loadMenus = async () => {
+      try {
+        const [norteSnap, surSnap] = await Promise.all([
+          getDoc(doc(db, "menus", "norte")),
+          getDoc(doc(db, "menus", "sur"))
+        ]);
+
+        const menus: Record<string, any> = {};
+        if (norteSnap.exists()) menus.norte = norteSnap.data();
+        if (surSnap.exists()) menus.sur = surSnap.data();
+
+        setBranchMenus(menus);
+      } catch (error) {
+        console.error("Error loading branch menus:", error);
+      }
+    };
+
+    loadMenus();
+  }, []);
 
   const searchOrders = async () => {
     if (!phone.trim()) return;
@@ -263,10 +322,10 @@ function TrackingContent() {
                         <div key={i} className="flex flex-col items-center gap-2 z-10">
                           <div
                             className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${done
-                                ? "bg-green-500 border-green-500 text-white"
-                                : active
-                                  ? `border-current text-current ${s.color}`
-                                  : "bg-white border-gray-200 text-gray-300"
+                              ? "bg-green-500 border-green-500 text-white"
+                              : active
+                                ? `border-current text-current ${s.color}`
+                                : "bg-white border-gray-200 text-gray-300"
                               }`}
                           >
                             {done ? (
@@ -288,18 +347,47 @@ function TrackingContent() {
 
                   {/* Order details */}
                   <div className="bg-gray-50 rounded-2xl p-4 space-y-1.5">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">{language === "es" ? "Especialidad" : "Specialty"}:</span>
-                      <span className="font-medium text-gray-900 capitalize">{order.item?.specialty}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">{language === "es" ? "Tamaño" : "Size"}:</span>
-                      <span className="font-medium text-gray-900 capitalize">{order.item?.size}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">{language === "es" ? "Cantidad" : "Qty"}:</span>
-                      <span className="font-medium text-gray-900">{order.item?.quantity}x</span>
-                    </div>
+                    {order.items ? (
+                      // New dynamic format
+                      <>
+                        {order.items.map((item, idx) => (
+                          <div key={idx} className="border-b border-gray-200 pb-2 mb-2 last:border-0">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-500">{language === "es" ? "Producto" : "Product"}:</span>
+                              <span className="font-medium text-gray-900 text-right max-w-48">{item.productName}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-500">{language === "es" ? "Cantidad" : "Qty"}:</span>
+                              <span className="font-medium text-gray-900">{item.quantity}x</span>
+                            </div>
+                            {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-500">{language === "es" ? "Opciones" : "Options"}:</span>
+                                <span className="font-medium text-gray-900 text-right max-w-48">
+                                  {getOptionNames(item.selectedOptions, branchMenus[order.branch]).join(", ") || Object.values(item.selectedOptions).flat().join(", ")}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </>
+                    ) : order.item ? (
+                      // Legacy format
+                      <>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">{language === "es" ? "Especialidad" : "Specialty"}:</span>
+                          <span className="font-medium text-gray-900 capitalize">{order.item?.specialty}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">{language === "es" ? "Tamaño" : "Size"}:</span>
+                          <span className="font-medium text-gray-900 capitalize">{order.item?.size}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-500">{language === "es" ? "Cantidad" : "Qty"}:</span>
+                          <span className="font-medium text-gray-900">{order.item?.quantity}x</span>
+                        </div>
+                      </>
+                    ) : null}
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">{language === "es" ? "Entrega" : "Delivery"}:</span>
                       <span className="font-medium text-gray-900 text-right max-w-48 truncate">{order.address}</span>

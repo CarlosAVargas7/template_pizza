@@ -51,9 +51,8 @@ export default function FaqClient() {
                 >
                   <span className="font-semibold text-gray-900">{item.q}</span>
                   <ChevronDown
-                    className={`w-5 h-5 text-gray-400 shrink-0 ml-3 transition-transform ${
-                      open === i ? "rotate-180" : ""
-                    }`}
+                    className={`w-5 h-5 text-gray-400 shrink-0 ml-3 transition-transform ${open === i ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
                 {open === i && (

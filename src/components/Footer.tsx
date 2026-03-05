@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Instagram, Facebook, MapPin, Phone, Clock } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { useSchedules } from "@/hooks/useSchedules";
 import { t } from "@/lib/i18n";
 
 // TikTok icon as SVG
@@ -17,6 +18,10 @@ function TikTokIcon({ className }: { className?: string }) {
 export default function Footer() {
   const { language } = useStore();
   const tx = t(language);
+
+  // Get schedules for both branches
+  const norteSchedules = useSchedules("norte");
+  const surSchedules = useSchedules("sur");
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -106,9 +111,29 @@ export default function Footer() {
                   +57 314 555 0101
                 </a>
               </li>
-              <li className="flex items-center gap-2 text-gray-400 text-sm">
-                <Clock className="w-4 h-4 text-primary shrink-0" />
-                <span>Lun–Dom: 11am – 10pm</span>
+              <li className="flex items-start gap-2 text-gray-400 text-sm">
+                <Clock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  {norteSchedules.loading ? (
+                    <span>Cargando horarios...</span>
+                  ) : (
+                    <div>
+                      <div className="font-medium text-white mb-1">
+                        Horarios
+                      </div>
+                      <div className="text-xs space-y-1">
+                        {norteSchedules.getFormattedSchedules().map((schedule, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <span className="text-gray-300 w-16">{schedule.day}</span>
+                            <span className={schedule.isClosed ? "text-red-400" : "text-gray-400"}>
+                              {schedule.time}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </li>
             </ul>
           </div>
@@ -129,9 +154,29 @@ export default function Footer() {
                   +57 314 555 0202
                 </a>
               </li>
-              <li className="flex items-center gap-2 text-gray-400 text-sm">
-                <Clock className="w-4 h-4 text-primary shrink-0" />
-                <span>Lun–Dom: 11am – 10pm</span>
+              <li className="flex items-start gap-2 text-gray-400 text-sm">
+                <Clock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  {surSchedules.loading ? (
+                    <span>Cargando horarios...</span>
+                  ) : (
+                    <div>
+                      <div className="font-medium text-white mb-1">
+                        Horarios
+                      </div>
+                      <div className="text-xs space-y-1">
+                        {surSchedules.getFormattedSchedules().map((schedule, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <span className="text-gray-300 w-16">{schedule.day}</span>
+                            <span className={schedule.isClosed ? "text-red-400" : "text-gray-400"}>
+                              {schedule.time}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </li>
             </ul>
           </div>

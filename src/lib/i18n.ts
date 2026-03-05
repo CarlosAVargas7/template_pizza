@@ -12,7 +12,8 @@ export const translations = {
     hero: {
       badge: "🍕 Domicilios en Medellín",
       title: "Pizza Artesanal a Tu Puerta",
-      subtitle: "Masa especial, ingredientes frescos y entrega rápida en Laureles, Norte, Envigado y Sur de Medellín.",
+      subtitle:
+        "Masa especial, ingredientes frescos y entrega rápida en Laureles, Norte, Envigado y Sur de Medellín.",
       cta: "Ordenar Ahora",
       track: "Rastrear mi Pedido",
     },
@@ -46,6 +47,7 @@ export const translations = {
       notes: "Instrucciones especiales",
       quantity: "Cantidad",
       addToOrder: "Agregar al Pedido",
+      continue: "Continuar",
       sizes: {
         mediana: "Mediana Estofada (6 porciones)",
         grande: "Grande Estofada (8 porciones) +$7.000",
@@ -84,6 +86,24 @@ export const translations = {
       submit: "Confirmar Pedido",
       submitting: "Procesando...",
     },
+    cart: {
+      title: "Tu Carrito",
+      continue: "Continuar",
+      empty: "Tu carrito está vacío",
+      remove: "Eliminar",
+      quantity: "Cantidad",
+      subtotal: "Subtotal",
+      delivery: "Domicilio",
+      total: "Total",
+    },
+    confirmation: {
+      title: "¡Pedido Confirmado!",
+      subtitle: "Tu pedido ha sido recibido y está siendo preparado.",
+      orderNumber: "Número de pedido",
+      deliveryDetails: "Detalles de entrega",
+      trackOrder: "Rastrear Pedido",
+      close: "Cerrar",
+    },
     tracking: {
       title: "Rastrear Pedido",
       subtitle: "Ingresa tu número de celular para ver el estado de tu pedido",
@@ -98,19 +118,47 @@ export const translations = {
     features: {
       title: "¿Por qué Pizza Antioquia?",
       items: [
-        { title: "Masa Especial Artesanal", desc: "Preparada diariamente con ingredientes seleccionados de la región." },
-        { title: "Entrega Rápida", desc: "Domicilio en menos de 45 minutos en toda el área de cobertura." },
-        { title: "Ingredientes Frescos", desc: "Seleccionamos los mejores ingredientes locales para cada pizza." },
-        { title: "Pago Seguro", desc: "Acepta tarjetas, PSE y efectivo. Plataforma Wompi certificada." },
+        {
+          title: "Masa Especial Artesanal",
+          desc: "Preparada diariamente con ingredientes seleccionados de la región.",
+        },
+        {
+          title: "Entrega Rápida",
+          desc: "Domicilio en menos de 45 minutos en toda el área de cobertura.",
+        },
+        {
+          title: "Ingredientes Frescos",
+          desc: "Seleccionamos los mejores ingredientes locales para cada pizza.",
+        },
+        {
+          title: "Pago Seguro",
+          desc: "Acepta tarjetas, PSE y efectivo. Plataforma Wompi certificada.",
+        },
       ],
     },
     testimonials: {
       title: "Lo que dicen nuestros clientes",
       items: [
-        { name: "María C.", text: "La mejor pizza de Laureles, sin duda. La masa artesanal es increíble y el domicilio siempre a tiempo.", rating: 5 },
-        { name: "Juan P.", text: "Pedimos todas las semanas. La Hawaiana Artesanal es nuestro favorito. Excelente servicio.", rating: 5 },
-        { name: "Sofía R.", text: "Desde Envigado, siempre pido a la Sucursal Sur. Rápidos y deliciosos.", rating: 5 },
-        { name: "Carlos M.", text: "La app es facilísima de usar y la pizza llega calientita. 10/10 recomendada.", rating: 5 },
+        {
+          name: "María C.",
+          text: "La mejor pizza de Laureles, sin duda. La masa artesanal es increíble y el domicilio siempre a tiempo.",
+          rating: 5,
+        },
+        {
+          name: "Juan P.",
+          text: "Pedimos todas las semanas. La Hawaiana Artesanal es nuestro favorito. Excelente servicio.",
+          rating: 5,
+        },
+        {
+          name: "Sofía R.",
+          text: "Desde Envigado, siempre pido a la Sucursal Sur. Rápidos y deliciosos.",
+          rating: 5,
+        },
+        {
+          name: "Carlos M.",
+          text: "La app es facilísima de usar y la pizza llega calientita. 10/10 recomendada.",
+          rating: 5,
+        },
       ],
     },
     faq: {
@@ -157,7 +205,8 @@ export const translations = {
       terms: "Términos y Condiciones",
     },
     cookies: {
-      message: "Usamos cookies para guardar tu dirección y pedidos favoritos. ¿Aceptas?",
+      message:
+        "Usamos cookies para guardar tu dirección y pedidos favoritos. ¿Aceptas?",
       accept: "Aceptar",
       reject: "Rechazar",
       configure: "Configurar",
@@ -189,7 +238,8 @@ export const translations = {
     hero: {
       badge: "🍕 Delivery in Medellín",
       title: "Artisanal Pizza at Your Door",
-      subtitle: "Special dough, fresh ingredients and fast delivery in Laureles, Norte, Envigado and Sur de Medellín.",
+      subtitle:
+        "Special dough, fresh ingredients and fast delivery in Laureles, Norte, Envigado and Sur de Medellín.",
       cta: "Order Now",
       track: "Track My Order",
     },
@@ -223,6 +273,7 @@ export const translations = {
       notes: "Special instructions",
       quantity: "Quantity",
       addToOrder: "Add to Order",
+      continue: "Continue",
       sizes: {
         mediana: "Medium Braised (6 slices)",
         grande: "Large Braised (8 slices) +$7,000",
@@ -261,6 +312,24 @@ export const translations = {
       submit: "Confirm Order",
       submitting: "Processing...",
     },
+    cart: {
+      title: "Your Cart",
+      continue: "Continue",
+      empty: "Your cart is empty",
+      remove: "Remove",
+      quantity: "Quantity",
+      subtotal: "Subtotal",
+      delivery: "Delivery",
+      total: "Total",
+    },
+    confirmation: {
+      title: "Order Confirmed!",
+      subtitle: "Your order has been received and is being prepared.",
+      orderNumber: "Order Number",
+      deliveryDetails: "Delivery Details",
+      trackOrder: "Track Order",
+      close: "Close",
+    },
     tracking: {
       title: "Track Order",
       subtitle: "Enter your mobile number to see the status of your order",
@@ -275,19 +344,47 @@ export const translations = {
     features: {
       title: "Why Pizza Antioquia?",
       items: [
-        { title: "Special Artisan Dough", desc: "Prepared daily with selected regional ingredients." },
-        { title: "Fast Delivery", desc: "Delivered in under 45 minutes across the coverage area." },
-        { title: "Fresh Ingredients", desc: "We select the best local ingredients for each pizza." },
-        { title: "Secure Payment", desc: "Credit cards, PSE and cash accepted. Wompi certified platform." },
+        {
+          title: "Special Artisan Dough",
+          desc: "Prepared daily with selected regional ingredients.",
+        },
+        {
+          title: "Fast Delivery",
+          desc: "Delivered in under 45 minutes across the coverage area.",
+        },
+        {
+          title: "Fresh Ingredients",
+          desc: "We select the best local ingredients for each pizza.",
+        },
+        {
+          title: "Secure Payment",
+          desc: "Credit cards, PSE and cash accepted. Wompi certified platform.",
+        },
       ],
     },
     testimonials: {
       title: "What our customers say",
       items: [
-        { name: "María C.", text: "The best pizza in Laureles, no doubt. The artisanal dough is incredible and delivery always on time.", rating: 5 },
-        { name: "Juan P.", text: "We order every week. The Artisanal Hawaiian is our favorite. Excellent service.", rating: 5 },
-        { name: "Sofía R.", text: "From Envigado, I always order from the South Branch. Fast and delicious.", rating: 5 },
-        { name: "Carlos M.", text: "The app is so easy to use and the pizza arrives hot. 10/10 recommended.", rating: 5 },
+        {
+          name: "María C.",
+          text: "The best pizza in Laureles, no doubt. The artisanal dough is incredible and delivery always on time.",
+          rating: 5,
+        },
+        {
+          name: "Juan P.",
+          text: "We order every week. The Artisanal Hawaiian is our favorite. Excellent service.",
+          rating: 5,
+        },
+        {
+          name: "Sofía R.",
+          text: "From Envigado, I always order from the South Branch. Fast and delicious.",
+          rating: 5,
+        },
+        {
+          name: "Carlos M.",
+          text: "The app is so easy to use and the pizza arrives hot. 10/10 recommended.",
+          rating: 5,
+        },
       ],
     },
     faq: {
@@ -334,7 +431,8 @@ export const translations = {
       terms: "Terms & Conditions",
     },
     cookies: {
-      message: "We use cookies to save your address and favorite orders. Do you accept?",
+      message:
+        "We use cookies to save your address and favorite orders. Do you accept?",
       accept: "Accept",
       reject: "Reject",
       configure: "Configure",

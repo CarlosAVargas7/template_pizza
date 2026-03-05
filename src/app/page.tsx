@@ -21,6 +21,7 @@ import CookieBanner from "@/components/CookieBanner";
 import OrderModal from "@/components/OrderModal";
 import { useStore } from "@/lib/store";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useSchedules } from "@/hooks/useSchedules";
 import { useState } from "react";
 
 // Pizza SVG Illustration
@@ -90,6 +91,10 @@ export default function HomePage() {
   const { tx, language } = useLanguage();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
+  // Get schedules for both branches
+  const norteSchedules = useSchedules("norte");
+  const surSchedules = useSchedules("sur");
+
   const features = [
     { icon: Leaf, ...tx.features.items[0] },
     { icon: Truck, ...tx.features.items[1] },
@@ -148,7 +153,7 @@ export default function HomePage() {
               </div>
 
               {/* CTAs */}
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 relative z-10 pointer-events-auto">
                 <button
                   onClick={() => setOrderModalOpen(true)}
                   className="group flex items-center justify-center gap-3 px-8 py-4 bg-white text-primary font-black rounded-2xl shadow-2xl hover:scale-105 transition-transform pulse-ring text-lg"
@@ -317,11 +322,10 @@ export default function HomePage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08 }}
-                className={`card-hover p-6 rounded-2xl border ${
-                  (item as { isCta?: boolean }).isCta
-                    ? "border-primary bg-primary/5 cursor-pointer"
-                    : "border-white bg-white shadow-sm"
-                }`}
+                className={`card-hover p-6 rounded-2xl border ${(item as { isCta?: boolean }).isCta
+                  ? "border-primary bg-primary/5 cursor-pointer"
+                  : "border-white bg-white shadow-sm"
+                  }`}
                 onClick={(item as { isCta?: boolean }).isCta ? () => setOrderModalOpen(true) : undefined}
               >
                 <div className="flex items-start justify-between mb-3">
@@ -418,7 +422,16 @@ export default function HomePage() {
                   </h3>
                 </div>
                 <p className="text-sm text-gray-500 mb-1">{tx.branches.norte.address}</p>
-                <p className="text-sm text-gray-500 mb-1">{tx.branches.norte.hours}</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="w-4 h-4 text-primary" />
+                  <p className="text-sm text-gray-500">
+                    {norteSchedules.loading ? "Cargando horarios..." :
+                      norteSchedules.isStoreOpen() ?
+                        `Abierto ahora - Cierra a las ${norteSchedules.getCurrentDaySchedule()?.closeTime}` :
+                        `Cerrado - ${norteSchedules.getNextOpeningTime()}`
+                    }
+                  </p>
+                </div>
                 <a href="tel:+573145550101" className="text-sm text-primary font-medium hover:underline">
                   {tx.branches.norte.phone}
                 </a>
@@ -454,7 +467,16 @@ export default function HomePage() {
                   </h3>
                 </div>
                 <p className="text-sm text-gray-500 mb-1">{tx.branches.sur.address}</p>
-                <p className="text-sm text-gray-500 mb-1">{tx.branches.sur.hours}</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <Clock className="w-4 h-4 text-primary" />
+                  <p className="text-sm text-gray-500">
+                    {surSchedules.loading ? "Cargando horarios..." :
+                      surSchedules.isStoreOpen() ?
+                        `Abierto ahora - Cierra a las ${surSchedules.getCurrentDaySchedule()?.closeTime}` :
+                        `Cerrado - ${surSchedules.getNextOpeningTime()}`
+                    }
+                  </p>
+                </div>
                 <a href="tel:+573145550202" className="text-sm text-primary font-medium hover:underline">
                   {tx.branches.sur.phone}
                 </a>
@@ -534,9 +556,8 @@ export default function HomePage() {
                 >
                   <span className="font-semibold text-gray-900 text-sm sm:text-base">{item.q}</span>
                   <ChevronDown
-                    className={`w-5 h-5 text-gray-400 shrink-0 ml-3 transition-transform ${
-                      openFaq === i ? "rotate-180" : ""
-                    }`}
+                    className={`w-5 h-5 text-gray-400 shrink-0 ml-3 transition-transform ${openFaq === i ? "rotate-180" : ""
+                      }`}
                   />
                 </button>
                 {openFaq === i && (
