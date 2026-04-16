@@ -1,3 +1,5 @@
+# Video (youtube)
+
 [![Preview del Video](https://img.youtube.com/vi/o2DYeJHu9zw/0.jpg)](https://www.youtube.com/watch?v=o2DYeJHu9zw)
 
 # Pizza Antioquia - E-commerce Platform
@@ -146,24 +148,6 @@ pnpm build
 # Start production server locally
 pnpm start
 ```
-
-### **Ready for Deployment**
-
-This project is configured and ready for deployment on:
-
-- **Vercel** (recommended for Next.js apps)
-- **Netlify**
-- **AWS Amplify**
-- **Docker** (containerized deployment)
-
-Just connect your repository and the platform will handle the rest!
-
-## **Performance Metrics**
-
-- **Lighthouse Score**: 95+ (Performance, Accessibility, Best Practices, SEO)
-- **Core Web Vitals**: LCP < 2.5s, CLS < 0.1, INP < 200ms
-- **Bundle Size**: Optimized with code splitting
-- **Mobile Performance**: Fully responsive, touch-optimized
 
 ## **Why This Project?**
 
