@@ -37,8 +37,41 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# environment variables
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .env
 .env.example
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Logs
+logs
+*.log
+
+# Cache
+.cache/
+.parcel-cache/
+
+# Temporary folders
+tmp/
+temp/
 
 

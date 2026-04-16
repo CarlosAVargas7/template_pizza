@@ -3,7 +3,12 @@ import { create } from "zustand";
 
 export type Language = "es" | "en";
 export type Branch = "norte" | "sur" | null;
-export type OrderStatus = "pendiente" | "confirmado" | "preparacion" | "despachado";
+export type OrderStatus =
+  | "pendiente"
+  | "confirmado"
+  | "preparacion"
+  | "despachado"
+  | "pre-orden";
 
 export interface OrderItem {
   size: string;

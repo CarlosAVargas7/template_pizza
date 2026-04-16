@@ -60,6 +60,7 @@ const STATUS_CONFIG: Record<
   confirmado: { label: "Confirmado", labelEn: "Confirmed", color: "bg-green-500", step: 1 },
   preparacion: { label: "En Preparación", labelEn: "Preparing", color: "bg-orange-500", step: 2 },
   despachado: { label: "Despachado", labelEn: "Dispatched", color: "bg-blue-500", step: 3 },
+  "pre-orden": { label: "Pre-orden", labelEn: "Pre-order", color: "bg-purple-500", step: 0 },
 };
 
 // Helper function to get option names from IDs
@@ -261,7 +262,7 @@ function TrackingContent() {
 
           {orders.map((order, idx) => {
             const step = getStepForStatus(order.status);
-            const statusConfig = STATUS_CONFIG[order.status];
+            const statusConfig = STATUS_CONFIG[order.status as OrderStatus] ?? STATUS_CONFIG["pendiente"];
             const createdDate = order.createdAt?.toDate?.();
 
             return (
