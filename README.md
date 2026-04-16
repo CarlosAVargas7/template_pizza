@@ -1,3 +1,5 @@
+[![Preview del Video](https://img.youtube.com/vi/o2DYeJHu9zw/0.jpg)](https://www.youtube.com/watch?v=o2DYeJHu9zw)
+
 # Pizza Antioquia - E-commerce Platform
 
 A modern, full-stack e-commerce platform for Pizza Antioquia, showcasing advanced frontend development skills with React, Next.js, and TypeScript.
