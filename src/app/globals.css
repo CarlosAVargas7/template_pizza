@@ -106,12 +106,23 @@ body {
 }
 
 .hero-bg {
-  background: linear-gradient(
-    135deg,
-    hsl(0 85% 42%) 0%,
-    hsl(0 90% 35%) 50%,
-    hsl(20 90% 30%) 100%
-  );
+  background-image: url('/images/pizzahd.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  position: relative;
+}
+
+.hero-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 0;
+}
+
+.hero-bg > * {
+  z-index: 1;
 }
 
 .text-gradient {
@@ -172,6 +183,25 @@ body {
 }
 .pulse-ring {
   animation: pulse-ring 2s infinite;
+}
+
+/* Vibration animation for WhatsApp button */
+@keyframes vibrate {
+  0%, 20% {
+    transform: translateX(0);
+  }
+  22%, 26%, 30%, 34%, 38% {
+    transform: translateX(-3px);
+  }
+  24%, 28%, 32%, 36% {
+    transform: translateX(3px);
+  }
+  40%, 100% {
+    transform: translateX(0);
+  }
+}
+.whatsapp-vibrate {
+  animation: vibrate 4s ease-in-out infinite;
 }
 
 /* Admin Dark Mode */
