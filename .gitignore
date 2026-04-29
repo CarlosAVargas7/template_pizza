@@ -43,7 +43,6 @@ next-env.d.ts
 .env.test.local
 .env.production.local
 .env
-.env.example
 
 # IDEs and editors
 .vscode/
